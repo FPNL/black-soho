@@ -2,12 +2,10 @@
   <details class="details-reset">
     <summary title="Click for language details">
       <div class="evaluate__stats__graph">
-        <span :class="['evaluate', key]" :style="{width: graph.w}"
-        v-for="(graph, key) in stats" :key="key"
-        >
-        <q-tooltip>
-          <p v-for="(txt, index) in graph.content" :key="index + key">{{txt}}</p>
-        </q-tooltip>
+        <span v-for="(graph, key) in stats" :key="key" :class="['evaluate', key]" :style="{width: graph.w}" >
+          <q-tooltip>
+            <p v-for="(txt, index) in graph.content" :key="index + key">{{ $t(txt) }}</p>
+          </q-tooltip>
         </span>
       </div>
     </summary>
@@ -16,10 +14,11 @@
 
 <script lang="ts">
 import { defineComponent, PropType } from '@vue/composition-api'
-import { StatsContent, StatsGraph } from './models'
+import { StatsGraph } from './models'
+import { EVForm } from 'src/api/config'
 
-function useCalculateStatsWidth (props: StatsContent): {stats: StatsGraph} {
-  const stats: StatsGraph = { evaluate1: { w: '0%', content: [] } }
+function useCalculateStatsWidth (props: EVForm): StatsGraph {
+  const stats: StatsGraph = { ev1: { w: '0%', content: [] } }
   let totoalWeight = 0
   for (const key in props) {
     totoalWeight += props[key].length
@@ -28,40 +27,35 @@ function useCalculateStatsWidth (props: StatsContent): {stats: StatsGraph} {
     const content = props[key]
     stats[key] = {
       w: (content.length * 100 / totoalWeight).toFixed(3) + '%',
-      content
+      content: content.map(value => value.label)
     }
   }
-  return { stats }
+  return stats
 }
+
 export default defineComponent({
   name: 'BaseStatsGraph',
   props: {
-    statsContent: {
-      type: (Object as unknown) as PropType<StatsContent>,
-      // required: true,
+    evList: {
+      type: (Object as unknown) as PropType<EVForm>,
       default () {
-        return ({
-          evaluate5: ['a', 'b', 'd', 'e'],
-          evaluate4: ['c', 'c1'],
-          evaluate3: ['d', 'd3'],
-          evaluate2: ['d', 'd3']
-        })
+        return { ev1: [{ label: '', value: '' }] }
       }
     }
   },
-  setup (props: {statsContent: StatsContent}) {
-    return { ...useCalculateStatsWidth(props.statsContent) }
+  setup (props: {evList: EVForm}) {
+    return { stats: useCalculateStatsWidth(props.evList) }
   }
 })
 </script>
 
 <style lang="stylus">
 $graphHeight = 10px
-$evaluate5 = black
-$evaluate4 = #f44336
-$evaluate3 = #ff9800
-$evaluate2 = #ffeb3b
-$evaluate1 = white
+$ev3 = black
+$ev2 = #f44336
+$ev1 = #ff9800
+// $ev2 = #ffeb3b
+// $ev1 = white
 
 details summary::-webkit-details-marker
   display none
@@ -92,14 +86,14 @@ summary
 .evaluate
   height $graphHeight
   line-height $graphHeight
-.evaluate5
-  background-color $evaluate5
-.evaluate4
-  background-color $evaluate4
-.evaluate3
-  background-color $evaluate3
-.evaluate2
-  background-color $evaluate2
-.evaluate1
-  background-color $evaluate1
+.ev5
+  background-color $ev5
+.ev4
+  background-color $ev4
+.ev3
+  background-color $ev3
+.ev2
+  background-color $ev2
+.ev1
+  background-color $ev1
 </style>

@@ -33,9 +33,15 @@
     <!-- <q-drawer v-model="left" side="left" overlay elevated> -->
       <!-- drawer content -->
     <!-- </q-drawer> -->
-    <q-drawer v-model="right" width="400" side="right" overlay bordered class="bg-sidebar">
-      <LRForm v-if="isLogin"/>
-      <ExposeHistory v-else/>
+    <q-drawer v-model="right" :width="400" side="right" overlay bordered class="bg-sidebar">
+      <!-- FIXME sidebarReady loading 畫面  -->
+      <div v-if="!sidebarReady">Loading...</div>
+      <div v-else-if="errorHappened">Error 502</div>
+      <LRForm v-else-if="!isLogin"/>
+      <ExposeHistory v-else
+        :typeList="config.exposeForm.typeList" :locationList="config.exposeForm.locationList"
+        :evList="config.exposeForm.evList"
+      />
     </q-drawer>
 
     <q-page-container>
@@ -57,19 +63,31 @@
 <script lang="ts">
 /* PropType, computed, reactive */
 import { defineComponent, ref } from '@vue/composition-api'
-import BaseCard from 'components/BaseCard.vue'
+import { isLogin, login } from '../api/user'
+import { fetchConfig, config } from '../api/config'
+
 import SideLayout from 'layouts/SideLayout.vue'
+import BaseCard from 'components/BaseCard.vue'
 import LRForm from 'components/sidebar/L_R_Form.vue'
 import ExposeHistory from 'components/sidebar/ExposeHistory.vue'
 const left = ref(false)
 const right = ref(true)
-const isLogin = ref(false)
 const researchTxt = ref('')
+const sidebarReady = ref(false)
+const errorHappened = ref(false)
+
 export default defineComponent({
   name: '',
   components: { BaseCard, SideLayout, LRForm, ExposeHistory },
   setup () {
-    return { left, right, researchTxt, isLogin }
+    Promise.all([login(), fetchConfig()])
+      .then(res => {
+        if (res[1] === false) {
+          errorHappened.value = true
+        }
+        sidebarReady.value = true
+      })
+    return { left, right, researchTxt, isLogin, sidebarReady, errorHappened, config }
   }
 })
 </script>

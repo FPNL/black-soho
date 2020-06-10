@@ -44,6 +44,7 @@
 // SetupContext
 import { defineComponent, ref, reactive } from '@vue/composition-api'
 import { LRList, LRForm, LRFormData } from './model'
+import * as userAPI from '../../api/user'
 
 const crrState = ref<LRList>('login')
 const isPwd = ref(true)
@@ -57,14 +58,21 @@ const formData: LRFormData = reactive({
   password: ''
 })
 
-function onSubmit () {
-  // TODO 送出 API 並
-  console.log('onSubmit', formData)
-}
-
 function onReset () {
   formData.account = ''
   formData.password = ''
+}
+
+async function onSubmit () {
+  // TODO loading -> check data -> req api -> 失敗的話 -> show error message
+  const success = await userAPI.login()
+  if (!success) {
+    // showErrorMsg()
+  }
+
+  //  clean Form Data
+  console.log('onSubmit', formData.account, formData.password)
+  onReset()
 }
 
 export default defineComponent({

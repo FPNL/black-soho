@@ -14,3 +14,18 @@ export interface LRFormData {
   account: string;
   password: string;
 }
+
+export interface ExposeHistoryForm {
+  type: string;
+  company: string;
+  location: string[];
+  webName: string;
+  webLink: string;
+  contact: string;
+  items: string[];
+  quality: string;
+  context: string;
+  [i: string]: string[] | string;
+}
+export type TypicalFormList = { label: string; value: string }[]
+export type TypicalSelectInputList = string[]

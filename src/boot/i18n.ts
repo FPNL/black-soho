@@ -14,6 +14,7 @@ Vue.use(VueI18n)
 export const i18n = new VueI18n({
   locale: 'en-us',
   fallbackLocale: 'en-us',
+  silentTranslationWarn: true,
   messages
 })
 

@@ -1,6 +1,6 @@
 # Black-SOHO (black-soho)
 
-Collect black SOHO history 
+Collect black SOHO history
 
 ## Install the dependencies
 ```bash
@@ -24,3 +24,17 @@ quasar build
 
 ### Customize the configuration
 See [Configuring quasar.conf.js](https://quasar.dev/quasar-cli/quasar-conf-js).
+
+[cards]
+  card posts
+[config]
+  formConfig
+[user]
+  login
+  register
+  logout
+
+state
+login
+
+[ code ] => trasform & translate => [ value, label ] => [ code ]
