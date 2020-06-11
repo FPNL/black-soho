@@ -1,40 +1,38 @@
-# Black-SOHO (black-soho)
-
-Collect black SOHO history
-
-## Install the dependencies
+## 安裝
+### 1. Install the dependencies
 ```bash
 yarn
 ```
 
-### Start the app in development mode (hot-code reloading, error reporting, etc.)
+### 2. Start the app in development mode (hot-code reloading, error reporting, etc.)
 ```bash
 quasar dev
 ```
 
-### Lint the files
+### 3. Lint the files
 ```bash
 yarn run lint
 ```
 
-### Build the app for production
+### 4. Build the app for production
 ```bash
 quasar build
 ```
 
-### Customize the configuration
+### 5. Customize the configuration
 See [Configuring quasar.conf.js](https://quasar.dev/quasar-cli/quasar-conf-js).
 
-[cards]
-  card posts
-[config]
-  formConfig
-[user]
-  login
-  register
-  logout
+## 流程
 
-state
-login
-
-[ code ] => trasform & translate => [ value, label ] => [ code ]
+```txt
+進入網站 - 初始化(取得文, 取得設定)
+  -> 註冊
+  -> 登入
+____________訪客狀態_____
+------------登入狀態-----
+    -> 登出
+    -> 檢舉文
+    -> 貼文
+      -> 修文
+      -> 刪文
+```

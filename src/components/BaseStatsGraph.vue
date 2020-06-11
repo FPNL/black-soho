@@ -2,7 +2,7 @@
   <details class="details-reset">
     <summary title="Click for language details">
       <div class="evaluate__stats__graph">
-        <span v-for="(graph, key) in stats" :key="key" :class="['evaluate', key]" :style="{width: graph.w}" >
+        <span v-for="(graph, index) in stats" :key="key" :class="['evaluate', 'ev'+(index+1)]" :style="{width: graph.w}" >
           <q-tooltip>
             <p v-for="(txt, index) in graph.content" :key="index + key">{{ $t(txt) }}</p>
           </q-tooltip>
@@ -15,20 +15,24 @@
 <script lang="ts">
 import { defineComponent, PropType } from '@vue/composition-api'
 import { StatsGraph } from './models'
-import { EVForm } from 'src/api/config'
-
-function useCalculateStatsWidth (props: EVForm): StatsGraph {
-  const stats: StatsGraph = { ev1: { w: '0%', content: [] } }
+import { evListHandler } from 'src/api/config'
+type XX = {w: string; content: string[]}[]
+function useCalculateStatsWidth (list: string[]): XX {
+  const { evList } = evListHandler(list)
+  const stats: XX = []
   let totoalWeight = 0
-  for (const key in props) {
-    totoalWeight += props[key].length
+  for (const ev of evList) {
+    totoalWeight += ev.length
   }
-  for (const key in props) {
-    const content = props[key]
-    stats[key] = {
-      w: (content.length * 100 / totoalWeight).toFixed(3) + '%',
-      content: content.map(value => value.label)
+  for (const ev of evList) {
+    const content = []
+    for (const value of ev) {
+      content.push(value.label)
     }
+    stats.push({
+      w: (ev.length * 100 / totoalWeight).toFixed(3) + '%',
+      content
+    })
   }
   return stats
 }
@@ -37,13 +41,14 @@ export default defineComponent({
   name: 'BaseStatsGraph',
   props: {
     evList: {
-      type: (Object as unknown) as PropType<EVForm>,
+      type: (Array as unknown) as PropType<string[]>,
       default () {
-        return { ev1: [{ label: '', value: '' }] }
+        return ['']
+        // return { ev1: [{ label: '', value: '' }] }
       }
     }
   },
-  setup (props: {evList: EVForm}) {
+  setup (props: {evList: string[]}) {
     return { stats: useCalculateStatsWidth(props.evList) }
   }
 })

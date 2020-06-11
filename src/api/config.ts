@@ -1,93 +1,123 @@
 import { reactive } from '@vue/composition-api'
-import { TypicalFormList, TypicalSelectInputList } from 'src/components/sidebar/model'
 import { i18n } from '../boot/i18n'
-export interface Config {
+
+// 資料來源格式
+interface ConfigResponseData {
   exposeForm: {
-    typeList: TypicalSelectInputList;
-    locationList: TypicalFormList;
-    evList: {
-      ev1: TypicalFormList;
-      ev2: TypicalFormList;
-      ev3: TypicalFormList;
-    };
+    typeList: string[];
+    locationList: string[];
+    evList: string[];
   };
 }
 
-export const config = (reactive({ exposeForm: {} }) as Config)
+type TypeList = string[];
+type LocationList = { label: string; value: string }[];
+type EvList = { label: string; value: string }[][];
 
-interface ResponseData {
-  typeList: TypicalSelectInputList;
-  locationList: TypicalSelectInputList;
-  evList: TypicalSelectInputList;
+export interface ExposeForm {
+  typeList: TypeList;
+  locationList: LocationList;
+  // 0: ev1 List, 1: ev2 List, 3: evList
+  evList: EvList;
+}
+// 整理後的格式
+
+interface Config {
+  exposeForm: ExposeForm;
 }
 
-export interface EVForm {
-  ev1: TypicalFormList;
-  ev2: TypicalFormList;
-  ev3: TypicalFormList;
-  [i: string]: TypicalFormList;
-}
-
-function radomPromise (): Promise<ResponseData | false> {
-  const x = Math.floor(Math.random() * 11)
-  console.log('config random number', x)
+function fakeAPI<T> (data: T): Promise<T> {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
-      if (x > 5) {
-        resolve({
-          typeList: ['taipei', 'taichung'],
-          locationList: ['網拍', '排隊工'],
-          evList: ['ev12', 'ev23', 'ev24', 'ev31']
-        })
-      } else if (x > 2) {
-        resolve(false)
-      } else {
-        reject(new Error('401'))
-      }
+      resolve(data)
     }, 1000)
   })
 }
 
-function typeListHandler (list: string[]): TypicalSelectInputList {
-  return list
+function typeListHandler (typeList: string[]): {typeList: TypeList} {
+  return { typeList }
 }
 
-function locationListHandler (list: string[]): TypicalFormList {
-  return list.map(value => ({ label: (i18n.t(value) as string), value }))
+function locationListHandler (list: string[]): {locationList: LocationList} {
+  const locationList = list.map(value => ({ label: (i18n.t(value) as string), value }))
+  return { locationList }
 }
 
-function evListHandler (list: string[]): EVForm {
-  const regexp = new RegExp(/ev[\d]{1}/, 'i')
-  const statsContent: EVForm = { ev1: [], ev2: [], ev3: [] }
+export function evListHandler (list: string[]): {evList: EvList} {
+  const regexp = new RegExp(/^ev([\d]){1}/, 'i')
+  const evList: EvList = []
   list.sort()
-  list.map(value => {
+  for (const value of list) {
     const mch = regexp.exec(value)
     if (mch) {
-      const key = mch[0]
-      if (statsContent[key]) {
-        statsContent[key] = [...statsContent[key], { label: (i18n.t(value) as string), value }]
+      const key = Number(mch[1]) - 1
+      const content = { label: (i18n.t(value) as string), value }
+      if (evList[key]) {
+        evList[key].push(content)
       } else {
-        statsContent[key] = [{ label: (i18n.t(value) as string), value }]
+        evList[key] = [content]
       }
     }
-  })
-  return statsContent
+  }
+  return { evList }
+}
+
+export const config = (reactive({}) as Config)
+
+/*
+  由於後端送來的資料跟前端不同，所以要經過"變質"處理
+  並採用初始化翻譯，交給 Handler 處理
+  為何？ 因為使用者思想是在一開始的時候才會去變語言！
+    初始化翻譯： 資料進來的時候翻譯。體驗是倒吃甘蔗
+    即時翻譯： 網站呈現的時候才翻譯。一開始進程快，需要翻譯的地方慢
+*/
+function configMiddleware ({ exposeForm }: ConfigResponseData): void {
+  config.exposeForm = {
+    ...typeListHandler(exposeForm.typeList),
+    ...locationListHandler(exposeForm.locationList),
+    ...evListHandler(exposeForm.evList)
+  }
 }
 
 export async function fetchConfig (): Promise<boolean> {
+  const fakeData = {
+    exposeForm: {
+      typeList: ['taipei', 'taichung'],
+      locationList: ['網拍', '排隊工'],
+      evList: ['ev12', 'ev23', 'ev24', 'ev31']
+    }
+  }
   try {
     // TODO AJAX
-    const data = await radomPromise()
-    if (!data) {
-      return false
-    }
-    config.exposeForm = {
-      typeList: typeListHandler(data.typeList),
-      locationList: locationListHandler(data.locationList),
-      evList: evListHandler(data.evList)
-    }
+    const data = await fakeAPI(fakeData)
+    if (!data) { return false }
+
+    configMiddleware(data)
+
     return true
   } catch (error) {
     return false
   }
 }
+
+// function radomPromise(): Promise<ConfigResponseData | false> {
+//   const x = Math.floor(Math.random() * 11);
+//   console.log('config random number', x);
+//   return new Promise((resolve, reject) => {
+//     setTimeout(() => {
+//       if (x > 5) {
+//         resolve({
+//           exposeForm: {
+//             typeList: ['taipei', 'taichung'],
+//             locationList: ['網拍', '排隊工'],
+//             evList: ['ev12', 'ev23', 'ev24', 'ev31']
+//           }
+//         });
+//       } else if (x > 2) {
+//         resolve(false);
+//       } else {
+//         reject(new Error('401'));
+//       }
+//     }, 1000);
+//   });
+// }

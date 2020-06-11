@@ -92,8 +92,8 @@
       <q-checkbox v-model="submitCheck[1]" :label="$t('以上事跡我都是有憑有據')" />
 
       <div class="justify-around row">
-        <q-btn :label="$t('送出')" type="button" @click="onSubmitHandler" color="black" :disable="!submitCheck[0] || !submitCheck[1]"/>
-        <q-btn :label="$t('重設')" type="button" @click="onResetHandler" color="secondary"  class="q-ml-sm" />
+        <q-btn :label="$t('送出')" type="button" @click="onSubmitHandler(formData)" color="black" :disable="!submitCheck[0] || !submitCheck[1]"/>
+        <q-btn :label="$t('重設')" type="button" @click="onResetHandler(formData)" color="secondary"  class="q-ml-sm" />
       </div>
     </q-form>
   </div>
@@ -101,9 +101,13 @@
 
 <script lang="ts">
 import { defineComponent, ref, reactive, watch, PropType } from '@vue/composition-api'
-import { ExposeHistoryForm, TypicalSelectInputList, TypicalFormList } from './model'
+import { TypicalSelectInputList } from './model'
+import { ExposeForm } from 'src/api/config'
+import { CardData, postCard } from 'src/api/card'
+import { userData } from 'src/api/user'
 
-const originData: ExposeHistoryForm = {
+const originData: CardData = {
+  belongsTo: '',
   type: '',
   company: '',
   location: [],
@@ -115,37 +119,33 @@ const originData: ExposeHistoryForm = {
   context: ''
 }
 
-const formData: ExposeHistoryForm = reactive({ ...originData })
+const formData: CardData = reactive({ ...originData })
+// 有兩個選項要勾
 const submitCheck = reactive([false, false])
 const isNewType = ref(false)
 watch(isNewType, () => { formData.type = '' })
 
-// TODO: AJAX
-function onSubmitHandler () {
-  const cloneFormData = { ...formData }
+async function onSubmitHandler (formData: CardData) {
+  // -> add user data -> alter card quality and context  -> // TODO validation
+  const cloneFormData: CardData = { ...formData, belongsTo: userData.account }
   const regexp = new RegExp(/(\n){3,}/, 'g')
   cloneFormData.quality = cloneFormData.quality.replace(regexp, '\n\n').trim()
-  console.log('onSubmitHandler')
+  cloneFormData.context = cloneFormData.context.replace(regexp, '\n\n').trim()
+  const result = await postCard(cloneFormData)
+  console.log('onSubmitHandler', result)
 }
 
-function onResetHandler () {
-  for (const key in formData) {
-    if (Array.isArray(formData[key])) {
-      formData[key] = []
-    } else {
-      formData[key] = ''
-    }
-  }
+function onResetHandler (formData: CardData) {
+  Object.assign(formData, originData)
 }
 
-const filteredList = ref<TypicalSelectInputList>([])
-
-function useFilterLocation (props: TypicalSelectInputList) {
+function useFilterType ({ typeList }: ExposeForm) {
+  const filteredList = ref<TypicalSelectInputList>([])
   return {
     filterFn (val: string, update: (cbFn: Function) => void) {
       if (val === '') {
         update(() => {
-          filteredList.value = props
+          filteredList.value = typeList
           // with Quasar v1.7.4+ // here you have access to "ref" which // is the Vue reference of the QSelect
         })
         return
@@ -153,7 +153,7 @@ function useFilterLocation (props: TypicalSelectInputList) {
 
       update(() => {
         const needle = val.toLowerCase()
-        filteredList.value = props.filter(v => v.toLowerCase().includes(needle))
+        filteredList.value = typeList.filter(v => v.toLowerCase().includes(needle))
       })
     }
   }
@@ -162,48 +162,13 @@ function useFilterLocation (props: TypicalSelectInputList) {
 export default defineComponent({
   name: 'ExposeHistory',
   props: {
-    typeList: {
-      type: (Array as unknown) as PropType<TypicalSelectInputList>,
-      default () {
-        return ['台北', '新北', '台中', '彰化', '高雄']
-      }
-    },
-    locationList: {
-      type: (Array as unknown) as PropType<TypicalFormList>,
-      default () {
-        return [
-          { label: '台北', value: 't1' },
-          { label: '新北', value: 't2' },
-          { label: '彰化', value: 't3' },
-          { label: '台中', value: 't4' },
-          { label: '高雄', value: 't5' }
-        ]
-      }
-    },
-    evList: {
-      type: (Object as unknown) as PropType<{ev1: TypicalFormList; ev2: TypicalFormList;ev3: TypicalFormList}>,
-      default () {
-        return {
-          ev3: [
-            { label: '轉包人拿到款項就消失', value: 'ev31' }, { label: '案件完成，不結清款項', value: 'ev32' }
-          ],
-          ev2: [
-            { label: '不對等合約', value: 'ev21' },
-            { label: '正式簽約後，追加許多非簽約範圍的製作內容', value: 'ev22' },
-            { label: '討論 2 週以上後，已讀不回、無法抽時間簽約', value: 'ev23' },
-            { label: '要求報價，卻不提供需求、規格', value: 'ev24' },
-            { label: '轉介者採用他人作品自介', value: 'ev25' }
-          ],
-          ev1: [
-            { label: '諮詢後，不回覆訊息', value: 'ev11' },
-            { label: '案件金額低於合理價格範圍', value: 'ev12' }
-          ]
-        }
-      }
+    config: {
+      type: (Object as unknown) as PropType<ExposeForm>,
+      require: true
     }
   },
-  setup (props: { locationList: string[] }) {
-    return { isNewType, formData, onSubmitHandler, onResetHandler, submitCheck, ...useFilterLocation(props.locationList) }
+  setup (props: { config: ExposeForm }) {
+    return { isNewType, formData, onSubmitHandler, onResetHandler, submitCheck, ...useFilterType(props.config) }
   }
 })
 
@@ -243,6 +208,46 @@ export default defineComponent({
 //     label: '案件金額低於合理價格範圍', value: 'ev12'
 //   }
 // ]
+
+// typeList: {
+//   type: (Array as unknown) as PropType<TypicalSelectInputList>,
+//   default () {
+//     return ['台北', '新北', '台中', '彰化', '高雄']
+//   }
+// },
+// locationList: {
+//   type: (Array as unknown) as PropType<TypicalFormList>,
+//   default () {
+//     return [
+//       { label: '台北', value: 't1' },
+//       { label: '新北', value: 't2' },
+//       { label: '彰化', value: 't3' },
+//       { label: '台中', value: 't4' },
+//       { label: '高雄', value: 't5' }
+//     ]
+//   }
+// },
+// evList: {
+//   type: (Object as unknown) as PropType<{ev1: TypicalFormList; ev2: TypicalFormList;ev3: TypicalFormList}>,
+//   default () {
+//     return {
+//       ev3: [
+//         { label: '轉包人拿到款項就消失', value: 'ev31' }, { label: '案件完成，不結清款項', value: 'ev32' }
+//       ],
+//       ev2: [
+//         { label: '不對等合約', value: 'ev21' },
+//         { label: '正式簽約後，追加許多非簽約範圍的製作內容', value: 'ev22' },
+//         { label: '討論 2 週以上後，已讀不回、無法抽時間簽約', value: 'ev23' },
+//         { label: '要求報價，卻不提供需求、規格', value: 'ev24' },
+//         { label: '轉介者採用他人作品自介', value: 'ev25' }
+//       ],
+//       ev1: [
+//         { label: '諮詢後，不回覆訊息', value: 'ev11' },
+//         { label: '案件金額低於合理價格範圍', value: 'ev12' }
+//       ]
+//     }
+//   }
+// }
 </script>
 
 <style lang="stylus">

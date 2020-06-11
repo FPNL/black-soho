@@ -1,7 +1,7 @@
 <template>
   <q-card flat bordered class="bg-grey-1 main__card">
     <q-card-section class="q-py-none q-px-none">
-      <BaseStatsGraph :evList="config.exposeForm.evList"/>
+      <BaseStatsGraph :evList="cardData.items"/>
       <div class="row items-center no-wrap q-px-sm">
         <div class="col">
           <div class="text-subtitle1 card__line__list">
@@ -37,7 +37,6 @@
     </q-card-section>
 
     <q-card-section horizontal class="q-pa-sm card__sections">
-      <!-- FIXME KEY 會出錯還要加上卡片編號等 -->
       <div class="card__section q-pa-xs">
         <h6 class="q-my-none">
           {{ $t('quality') }}
@@ -59,35 +58,23 @@
 </template>
 
 <script lang="ts">
-// ref,
 import { defineComponent, PropType } from '@vue/composition-api'
+
 import BaseStatsGraph from 'components/BaseStatsGraph.vue'
-import { ExposeHistoryForm } from './sidebar/model'
-import { config } from '../api/config'
+import { CardData } from 'src/api/card'
+
 export default defineComponent({
-  name: 'BaseCard',
+  name: 'ComponentBaseCard',
   components: { BaseStatsGraph },
   props: {
     cardData: {
-      type: (Object as unknown) as PropType<ExposeHistoryForm>,
-      default () {
-        return {
-          type: '製作女裝服飾製作Facebook、 instagram、商城等 BN',
-          company: '公司已歇業（現在屬於個人接案agent）',
-          location: ['雙北', '台中', '未標注地點'],
-          webName: '104外包網，外包平台',
-          webLink: '#',
-          contact: '凃炳《AKNENNA》',
-          items: ['ev31', 'ev32'],
-          quality: '',
-          context: ''
-        }
-      }
+      type: (Object as unknown) as PropType<CardData>,
+      require: true
     }
-  },
-  setup () {
-    return { config }
   }
+  // setup () {
+  //   return { }
+  // }
 })
 </script>
 

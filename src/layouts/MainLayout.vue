@@ -30,18 +30,15 @@
       </q-tabs>
     </q-header>
 
-    <!-- <q-drawer v-model="left" side="left" overlay elevated> -->
+    <!-- <q-drawer v-model="openLeftDrawer" side="left" overlay elevated> -->
       <!-- drawer content -->
     <!-- </q-drawer> -->
-    <q-drawer v-model="right" :width="400" side="right" overlay bordered class="bg-sidebar">
-      <!-- FIXME sidebarReady loading 畫面  -->
+    <q-drawer v-model="openRightDrawer" :width="400" side="right" overlay bordered class="bg-sidebar">
+      <!-- TODO sidebarReady loading 畫面, error 502  -->
       <div v-if="!sidebarReady">Loading...</div>
       <div v-else-if="errorHappened">Error 502</div>
       <LRForm v-else-if="!isLogin"/>
-      <ExposeHistory v-else
-        :typeList="config.exposeForm.typeList" :locationList="config.exposeForm.locationList"
-        :evList="config.exposeForm.evList"
-      />
+      <ExposeHistory v-else :exposeForm="config.exposeForm" />
     </q-drawer>
 
     <q-page-container>
@@ -70,24 +67,35 @@ import SideLayout from 'layouts/SideLayout.vue'
 import BaseCard from 'components/BaseCard.vue'
 import LRForm from 'components/sidebar/L_R_Form.vue'
 import ExposeHistory from 'components/sidebar/ExposeHistory.vue'
-const left = ref(false)
-const right = ref(true)
+
+const openLeftDrawer = ref(false)
+const openRightDrawer = ref(true)
 const researchTxt = ref('')
 const sidebarReady = ref(false)
 const errorHappened = ref(false)
 
+async function init () {
+  const result = await Promise.all([login(), fetchConfig()])
+  if (result[1] === false) {
+    errorHappened.value = true
+  }
+  sidebarReady.value = true
+}
+
 export default defineComponent({
-  name: '',
+  name: 'MainLayout',
   components: { BaseCard, SideLayout, LRForm, ExposeHistory },
   setup () {
-    Promise.all([login(), fetchConfig()])
-      .then(res => {
-        if (res[1] === false) {
-          errorHappened.value = true
-        }
-        sidebarReady.value = true
-      })
-    return { left, right, researchTxt, isLogin, sidebarReady, errorHappened, config }
+    init()
+    return {
+      openLeftDrawer,
+      openRightDrawer,
+      researchTxt,
+      sidebarReady,
+      errorHappened,
+      isLogin,
+      config
+    }
   }
 })
 </script>

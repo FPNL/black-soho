@@ -1,51 +1,40 @@
 <template>
   <q-page class="row items-center justify-evenly">
-    <!-- <example-component
-      title="Example component"
-      active
-      :meta="meta"
-      :todos="todos"
-    ></example-component> -->
-    <BaseCard></BaseCard>
+    <div v-if="!isAjaxReady">Loading...</div>
+    <div v-else-if="isContentEmpty">Well... No one post yet</div>
+    <template v-else>
+      <BaseCard v-for="card in cards" :key="card.id" :cardData="card" />
+    </template>
   </q-page>
 </template>
 
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent, ref } from '@vue/composition-api'
 
-// import ExampleComponent from 'components/CompositionComponent.vue'
 import BaseCard from 'components/BaseCard.vue'
-import { Todo, Meta } from 'components/models'
-export default Vue.extend({
-  name: 'PageIndex',
+import { fetchCards, CardData } from '../api/card'
+
+const crrPage = ref(1)
+const isContentEmpty = ref(true)
+const isAjaxReady = ref(false)
+const cards = ref<CardData[]>([])
+
+async function init (): Promise<void> {
+  const result = await fetchCards({ page: crrPage.value })
+  isAjaxReady.value = true
+  if (!result || !result.length) {
+    isContentEmpty.value = true
+    return
+  }
+  cards.value = result
+}
+
+export default defineComponent({
+  name: 'PageHome',
   components: { BaseCard },
-  data () {
-    const todos: Todo[] = [
-      {
-        id: 1,
-        content: 'ct1'
-      },
-      {
-        id: 2,
-        content: 'ct2'
-      },
-      {
-        id: 3,
-        content: 'ct3'
-      },
-      {
-        id: 4,
-        content: 'ct4'
-      },
-      {
-        id: 5,
-        content: 'ct5'
-      }
-    ]
-    const meta: Meta = {
-      totalCount: 1200
-    }
-    return { todos, meta }
+  setup () {
+    init()
+    return { cards, isAjaxReady, isContentEmpty }
   }
 })
 </script>
