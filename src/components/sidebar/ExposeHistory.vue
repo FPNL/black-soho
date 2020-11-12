@@ -10,7 +10,7 @@
       <q-select :label="$t('案件屬性')"
         v-else
         v-model="formData.type"
-        :options="typeList" @filter="filterFn"
+        :options="exposeForm.typeList" @filter="filterFn"
         label-color="black" standout="bg-pink-1"
         style="width: 65%" filled use-input input-debounce="0"
       >
@@ -33,7 +33,7 @@
 
       <q-select
         :label="$t('地區')"
-        v-model="formData.location" :options="locationList"
+        v-model="formData.location" :options="exposeForm.locationList"
         label-color="black" standout="bg-pink-1"
         filled multiple emit-value map-options
       >
@@ -66,14 +66,10 @@
 
       <div class="q-pa-sm">
         <p class="q-mb-sm text-subtitle1" >{{$t('事項')}}</p>
-        <div v-for="(evItem, key, index) in evList" :key="'ev'+ index ">
+        <div v-for="(evItem, index) in exposeForm.evList" :key="'ev'+ index ">
           <q-icon name="star" size="1rem" color="primary" v-for="s in (index+1)" :key="'star'+ index + s"/>
           <q-option-group name="accepted_genres" v-model="formData.items" :options="evItem" type="checkbox" color="primary" inline />
         </div>
-        <!-- <q-icon name="star" size="1rem" color="primary" v-for="s in 2" :key="'star'+ index+ s"/>
-        <q-option-group name="accepted_genres" v-model="formData.items" :options="ev2" type="checkbox" color="primary" inline />
-        <q-icon name="star" size="1rem" color="primary"/>
-        <q-option-group name="accepted_genres" v-model="formData.items" :options="ev1" type="checkbox" color="primary" inline /> -->
       </div>
 
       <q-input
@@ -125,18 +121,24 @@ const submitCheck = reactive([false, false])
 const isNewType = ref(false)
 watch(isNewType, () => { formData.type = '' })
 
+function onResetHandler (formData: CardData) {
+  Object.assign(formData, originData)
+}
+
 async function onSubmitHandler (formData: CardData) {
+  // loading state ->
   // -> add user data -> alter card quality and context  -> // TODO validation
+  // clean
   const cloneFormData: CardData = { ...formData, belongsTo: userData.account }
   const regexp = new RegExp(/(\n){3,}/, 'g')
   cloneFormData.quality = cloneFormData.quality.replace(regexp, '\n\n').trim()
   cloneFormData.context = cloneFormData.context.replace(regexp, '\n\n').trim()
   const result = await postCard(cloneFormData)
   console.log('onSubmitHandler', result)
-}
-
-function onResetHandler (formData: CardData) {
-  Object.assign(formData, originData)
+  onResetHandler(formData)
+  for (let index = 0; index < submitCheck.length; index++) {
+    submitCheck[index] = false
+  }
 }
 
 function useFilterType ({ typeList }: ExposeForm) {
@@ -162,13 +164,13 @@ function useFilterType ({ typeList }: ExposeForm) {
 export default defineComponent({
   name: 'ExposeHistory',
   props: {
-    config: {
+    exposeForm: {
       type: (Object as unknown) as PropType<ExposeForm>,
       require: true
     }
   },
-  setup (props: { config: ExposeForm }) {
-    return { isNewType, formData, onSubmitHandler, onResetHandler, submitCheck, ...useFilterType(props.config) }
+  setup (props: { exposeForm: ExposeForm }) {
+    return { isNewType, formData, onSubmitHandler, onResetHandler, submitCheck, ...useFilterType(props.exposeForm) }
   }
 })
 

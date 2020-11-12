@@ -19,8 +19,7 @@
           </template>
         </q-input>
         <q-space />
-        <q-btn color="primary" :label="$t('快速面板')" @click="right = !right" />
-        <!-- <q-btn dense flat round icon="menu" @click="right = !right" /> -->
+        <q-btn color="primary" :label="$t('快速面板')" @click="openRightDrawer = !openRightDrawer" />
       </q-toolbar>
 
       <q-tabs align="left">
